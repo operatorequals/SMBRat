@@ -1,6 +1,4 @@
-ServerShare = "\\192.168.99.100\D$"
-UserName = "MSEDGEWIN10\Administrator1234"
-Password = "Admin123"
+ServerShare = "\\172.16.47.189\D$"
 ProjectName = "projectName"
 Set NetworkObject = CreateObject("WScript.Network")
 Set FSO = CreateObject("Scripting.FileSystemObject")
