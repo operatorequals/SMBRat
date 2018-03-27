@@ -79,3 +79,56 @@ Yet, in the near future, a Python CLI will be implememted to automate the above 
 
 
 
+
+## Outstanding Pitfalls
+
+### SMBv1 is **Not Encrypted** :
+
+```bash
+# tcpdump -i eth0 -A
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
+
+[...]
+
+15:25:06.695502 IP Deskjet-4540.microsoft-ds > 172.16.47.129.3128: Flags [P.], seq 2876:2971, ack 4791, win 2110, length 95 SMB PACKET: SMBreadX (REPLY)
+
+E...,E@.@.V.../.../....8
+.&Mi~.6P..>.......[.SMB........................
+.@............ .;........... .net localgroup "administrators"
+
+[...]
+
+15:25:06.702916 IP 172.16.47.129.3128 > Deskjet-4540.microsoft-ds: Flags [P.], seq 4917:5111, ack 3097, win 2052, length 194 SMB PACKET: SMBtrans2 (REQUEST)
+
+E...E.@......./.../..8..i~..
+.'*P....b.......SMB2......................
+
+.F..z.....(...........z.D.........}..........\.p.r.o.j.e.c.t.N.a.m.e.\.D.E.S.K.T.O.P.-.E.G.4.O.E.7.J.-.0.0.:.0.C.:.2.9.:.2.B.:.9.F.:.A.F.\.o.u.t.p.u.t...d.a.t...
+
+[...]
+
+15:25:06.751372 IP 172.16.47.129.3128 > Deskjet-4540.microsoft-ds: Flags [P.], seq 6049:6393, ack 3748, win 2050, length 344 SMB PACKET: SMBwrite (REQUEST)
+
+E...E.@....L../.../..8..i~. 
+.).P....*.....T.SMB........................
+.T....$.......'..$.Alias name     administrators
+Comment        Administrators have complete and unrestricted access to the computer/domain
+
+Members
+
+-------------------------------------------------------------------------------
+Admin
+Administrator
+defaultuser0
+The command completed successfully.
+
+[...]
+
+```
+
+
+
+The traffic (file *contents* and *paths*) are tranfered in plaintext if *SMBv1 Server* is used (e.g `impacket` 's `smbserver.py`).
+
+* An encryption/obfuscation layer would totally solve this one!
