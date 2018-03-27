@@ -56,6 +56,24 @@ Yet, if a Windows host has *RPC* enabled, it is possible to install the *VBS* fi
 It is also possible to utilize the `WMI` tool by local access to install the `agent.vbs`
 
 
+## Directory Structure in the *SMB Share*
+
+The Directory shared through SMB (named `Share` in this example) will grow using the below structure:
+```
+	Share/
+	|
+	\--Project1/
+	|	|
+	|	\--<Hostname1>-<MAC_ADDRESS1>/
+	|	\--<Hostname2>-<MAC_ADDRESS2>/
+	|
+	\--Project2/
+		|
+		\--<Hostname3>-<MAC_ADDRESS3>/
+	[...]
+```
+
+#### Never create folders manually in the Shared Folder
 
 
 
@@ -150,8 +168,27 @@ The command completed successfully.
 
 ```
 
-
-
 The traffic (file *contents* and *paths*) are tranfered in plaintext if *SMBv1 Server* is used (e.g `impacket` 's `smbserver.py`).
 
 * An encryption/obfuscation layer would totally solve this one!
+
+### The whole Share is *READ/WRITE* to Everyone:
+
+All Agents can modify files stored in the **Whole Share**. Meaning they can modify the `exec.dat` of other Agents...
+An `smbmap` will shed light:
+```bash
+$ smbmap -H 172.16.47.189
+[+] Finding open SMB ports....
+[+] User SMB session establishd on 172.16.47.189...
+[+] IP: 172.16.47.189:445	Name: Deskjet-4540                                      
+	Disk                                                  	Permissions
+	----                                                  	-----------
+	D$                                                	READ, WRITE
+	[!] Unable to remove test directory at \\172.16.47.189\D$\SVNRmxBFAO, plreae remove manually
+	IPC$                                              	READ, WRITE
+	[!] Unable to remove test directory at \\172.16.47.189\IPC$\SVNRmxBFAO, plreae remove manually
+```
+#### Pay attention to the lack of `-u` and `-p` parameters of `smbmap`.
+This is a *NULL session* (like FTP anonymous login). **EVERYONE can change the SHARE Files** and get *Remote Code Execution* on all infected machines.
+
+* Better fire up some `iptables` here...
