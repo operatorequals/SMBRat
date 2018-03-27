@@ -89,9 +89,6 @@ and `echo` to write stuff to the `exec.dat` file:
 $ echo 'whoami /all' > Share/projectName/DESKTOP-XXXXXXX-AA\:BB\:CC\:DD\:EE\:FF/exec.dat
 ```
 
-Yet, in the near future, a Python CLI will be implememted to automate the above tasks and also contain:
-
-
 ## The `handler.py`
 
 The experimental shell works as follows: 
