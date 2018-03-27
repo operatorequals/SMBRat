@@ -79,7 +79,7 @@ The Directory shared through SMB (named `Share` in this example) will grow using
 
 ## Barebone Usage
 
-At time of writing, no `Handler` shell is implemented, so usage can be done by just using a command like `watch` to inspect the `output.dat` file:
+~~At time of writing, no `Handler` shell is implemented,~~ so usage can be done by just using a command like `watch` to inspect the `output.dat` file:
 
 ```bash
 $ watch -n0.2 cat Share/projectName/DESKTOP-XXXXXXX-AA\:BB\:CC\:DD\:EE\:FF/output.dat
