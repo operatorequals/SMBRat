@@ -111,20 +111,20 @@ class SMBRatShell(cmd.Cmd) :
 	# def do_EOF(self, *args): return ''
 	def emptyline(self, *args): return ''
 
-	def do__session(self, line):
+	def do_session(self, line):
 		pprint.pprint(self.session_dict)
 		pass
 
 	# Change selected command to agents command
 	def do_agents(self, line):
 		"""
-> selected
+> agents
 
 Shows the list of Selected Agents
 
 		"""
 		
-		arg_parser = CLIArgumentParser(description = 'List all available agents')
+		arg_parser = CLIArgumentParser()
 		arg_parser.add_argument('--add', '-a', help = 'Add an Agent to the "selected" list', nargs = '+')
 		arg_parser.add_argument('--remove', '-r', help = 'Remove an Agent from the "selected" list', nargs = '+')
 		arg_parser.add_argument('--active', help = 'List all active agents', action = 'store_true')
@@ -141,36 +141,36 @@ Shows the list of Selected Agents
 
 		if args.add:
 			for add_arg in args.add:
+				# try:
+				# 	int_add_arg = int(add_arg)
+				# except ValueError as ve:
+				if add_arg.count('/') != 1:
+					print("Invalid argument: '{}'. projectName/agent".format(add_arg))
+					continue
+				project, agent = add_arg.split('/', 1)
 				try:
-					int_add_arg = int(add_arg)
-				except ValueError as ve:
-					if add_arg.count('/') != 1:
-						print("Invalid argument: '{}'. projectName/agent".format(add_arg))
-						continue
-					project, agent = add_arg.split('/', 1)
-					try:
-						self.session_dict[project][agent]
-					except:
-						print ("Agent '{}/{}' not found".format(project, agent))
-						continue					
-					self.selected.add( (project, agent) )
-					
+					self.session_dict[project][agent]
+				except:
+					print ("Agent '{}/{}' not found".format(project, agent))
+					continue					
+				self.selected.add( (project, agent) )
+
 
 		if args.remove:
 			for rem_arg in args.remove:
-				try:
-					int_rem_arg = int(rem_arg)
+				# try:
+				# 	int_rem_arg = int(rem_arg)
 
-				except ValueError as ve:
-					if rem_arg.count('/') != 1:
-						print("Invalid argument: '{}'. projectName/agent".format(rem_arg))
-						continue
-					project, agent = rem_arg.split('/', 1)
-					try:
-						self.selected.remove( (project, agent) )
-					except:
-						print ("Agent '{}/{}' not found".format(project, agent))
-						continue
+				# except ValueError as ve:
+				if rem_arg.count('/') != 1:
+					print("Invalid argument: '{}'. projectName/agent".format(rem_arg))
+					continue
+				project, agent = rem_arg.split('/', 1)
+				try:
+					self.selected.remove( (project, agent) )
+				except:
+					print ("Agent '{}/{}' not found".format(project, agent))
+					continue
 
 		if args.active:
 			print("not yet implemented")
@@ -227,6 +227,9 @@ Usually happens because the SMB Server (who creates the files) runs as "root" (t
 Type the command below to a new root shell and retry:
 	chmod -R 777 "{share}"'''.format(path = exec_path, share = Share) )
 				return
+
+	def do_exit(self, line):
+		return True
 
 
 if __name__ == '__main__' :
