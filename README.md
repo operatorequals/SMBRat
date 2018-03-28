@@ -55,6 +55,12 @@ Yet, if a Windows host has *RPC* enabled, it is possible to install the *VBS* fi
 
 It is also possible to utilize the `WMI` tool by local access to install the `agent.vbs`
 
+### Obfuscation?
+Visual Basic Scripts can be nicely obfuscated as well minified.
+
+It can be really handy to give it a spin before "deploying" :wink:
+* [Online Tool for VBS Obfuscation](https://isvbscriptdead.com/vbs-obfuscator/)
+* [Github Repo](https://github.com/DoctorLai/VBScript_Obfuscator)
 
 ## Directory Structure in the *SMB Share*
 
@@ -96,7 +102,7 @@ The experimental shell works as follows:
 $ python handler.py Share/
 SMBRat> 
 # When a new host gets infected:
-[+] Agent "DESKTOP-EG4OE7J" (00:0C:29:2B:9F:AF) just checked in for Project: "projectName"
+[+] Agent "DESKTOP-EG4OE7J" (00:0C:29:2B:9F:AF) just checked-in for Project: "projectName"
 
 SMBRat> execall whoami /user
 
