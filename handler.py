@@ -50,16 +50,19 @@ def initialize(share_folder) :
 	Share = share_folder
 
 	#Changed os.listdir to os.walk which returns [path/of/dir, [tupple, of, directories], [tuple, of, files]]
-	for root, projects, files in os.walk(share_folder):
-		for project in projects:
-			Sessions[project] = {}
-			project_dir = Share + os.sep + project
-			for subroot, agents, subfiles in os.walk(project_dir):
-				for agent in agents:
-					agent_dir = project_dir + os.sep + agent + os.sep
-					Sessions[project][agent] = {}
-					Sessions[project][agent]['exec'] = os.path.isfile(agent_dir + EXEC_DAT)
-					Sessions[project][agent]['output'] = os.path.isfile(agent_dir + OUTPUT_DAT)
+	for project in os.listdir(share_folder):
+		print (project)
+		if os.path.isfile(project):
+			continue
+		Sessions[project] = {}
+		project_dir = Share + os.sep + project
+		for agent in os.listdir(project_dir):
+			if os.path.isfile(agent):
+				continue
+			agent_dir = project_dir + os.sep + agent + os.sep
+			Sessions[project][agent] = {}
+			Sessions[project][agent]['exec'] = os.path.isfile(agent_dir + EXEC_DAT)
+			Sessions[project][agent]['output'] = os.path.isfile(agent_dir + OUTPUT_DAT)
 
 
 class SessionHandler(FileSystemEventHandler) :
