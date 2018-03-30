@@ -5,7 +5,7 @@ A Windows Remote Administration Tool in *Visual Basic Script*
 ## Idea
 *Windows Environments* like *Active Directory* Networks, get really bloated with *SMB* traffic.
 
-All hosts get *Policies* from the *SYSVOL*, configurations need remote files to work, desktop shortcuts tend to point to ``\\something\else\in\the\network.exe\``.
+All hosts get *Policies* from the *SYSVOL*, configurations need remote files to work, desktop shortcuts tend to point to ``\\something\else\in\the\network.exe``.
 
 None would notice one more connection attempt. *Right?*
 
