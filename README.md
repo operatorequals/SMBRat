@@ -18,16 +18,18 @@ None would notice one more connection attempt. *Right?*
 ### Agent
 
 The `agent` is a *Visual Basic Script* that runs on the infected host and connects to the *SMB Server*. It creates a folder in there named after the host's `hostname` and primary `MAC` address (trying to be *unique* and *informative* at the same time for reporting purposes).
-It does **NOT** use a drive letter to *Mount* the Share, just uses `UNC paths` to directly read remote files.
-It also injects the `UNC path` into the `%PATH%` variable of its execution environment.
+It does **NOT** use a drive letter to *Mount* the Share, just uses `UNC paths` to directly read remote files (no *Drive* is created in `explorer.exe`).
+It also injects the `UNC path` into the `%PATH%` variable of its own execution environment (you can run executables directly from your Linux machine's filesystem).
 
 #### Agent's Execution
 
 The `agent` is configured to **run once**. **Statelessly**.
-It looks for a file named `exec.dat` in the folder it created in the *SMB Share*
-If it finds the file, it **reads its content** and executes it as a command with `cmd.exe /c <command>` like a *semi-interactive shell*.
-The command's response is stored in `output.dat` (next to `exec.dat`). 
-Then deletes the `exec.dat` file.
+
+It's Routine is (more-or-less) as follows:
+* It looks for a file named `exec.dat` in the folder it created in the *SMB Share*
+* If it finds the file, it **reads its content** and executes it as a command with `cmd.exe /c <command>` like a *semi-interactive shell*.
+* The command's response is stored in `output.dat` (next to `exec.dat`). 
+* Deletes the `exec.dat` file.
 
 
 ### Handler
@@ -64,7 +66,7 @@ Yet, if a Windows host has *RPC* enabled, it is possible to install the *VBS* fi
 $ examples/wmipersist.py '<username>:<password>@<hostname/ipaddress>' install -vbs agent.vbs -name smbrat -timer 10
 ```  
 
-It is also possible to utilize the `WMI` tool by local access to install the `agent.vbs`
+It is also possible to utilize the `WMI` tool by local access to install the `agent.vbs` as fileless malware.
 
 ### Obfuscation?
 Visual Basic Scripts can be nicely *obfuscated*, *base64*'d as well as *minified*.
