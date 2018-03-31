@@ -7,7 +7,7 @@ import time
 from watchdog.events import FileSystemEventHandler, DirCreatedEvent
 from watchdog.observers import Observer
 
-from colorama import Fore, Back, Style
+from termcolor import colored
 
 EXEC_DAT = 'exec.dat'
 OUTPUT_DAT = 'output.dat'
@@ -41,7 +41,7 @@ def find_project(agent):
 	for project in Sessions.keys():
 		if agent in Sessions[project].keys():
 			return project
-	raise Error('[!] Project Not Found for Agent "{}"'.format(agent))
+	raise Error('[!] Project Not Found for Agent "{}"'.format(colored(agent,'red')))
 
 def initialize(share_folder) :
 	"""
@@ -107,7 +107,10 @@ class SessionHandler(FileSystemEventHandler) :
 			# print (project, agent_hostname, agent_mac)
 			print ('''
 [+] Agent "{}" ({}) just checked-in for Project: "{}"
-'''.format(agent_hostname, agent_mac, project))
+'''.format(colored(agent_hostname,'green'),
+	colored(agent_mac,'grey'),
+	colored(project,'blue'))
+	)
 			Sessions[project] = {}
 			Sessions[project][agent] = {}
 		# print (Sessions)
@@ -126,9 +129,10 @@ class SessionHandler(FileSystemEventHandler) :
 
 {response}
 ^^^^^^^^^^^^^^^^^^^^ {project}/{hostname} ^^^^^^^^^^^^^^^^^^^^
-					'''.format(project = project,
-						hostname = agent,
-						response =response)
+					'''.format(project = colored(project,'blue'),
+						hostname = colored(agent,'green'),
+						response = colored(response,'white', attrs=['bold'])
+						)
 					) 
 			if not No_history:
 				history_dat = get_path(agent, project, HIST_DAT)
@@ -147,7 +151,7 @@ class SMBRatShell(cmd.Cmd) :
 
 	def __init__(self, session_dict) :
 		super().__init__()
-		self.prompt = 'SMBRat> '
+		self.prompt = colored('SMBRat', 'red') + colored("> ", 'white', attrs=['bold'])
 		self.session_dict = session_dict
 		self.selected = set()
 		self.agent_list = []
@@ -184,7 +188,7 @@ class SMBRatShell(cmd.Cmd) :
 			try:
 				project = find_project(agent)
 			except:
-				print ("Agent '{}' not found".format(agent))
+				print ("Agent '{}' not found".format( colored(agent,'red') ))
 				continue
 			if i < len(args.add):	# It is an '--add' argument
 				self.selected.add( agent )
@@ -192,10 +196,10 @@ class SMBRatShell(cmd.Cmd) :
 				try :
 					self.selected.remove( agent )
 				except :
-					print ("[!] Agent {} not Selected".format(agent))
+					print ("[!] Agent {} not Selected".format(colored(agent,'red')) )
 
 		if not self.selected:
-			print ("No Agents selected!")
+			print (colored("No Agents selected!", 'magenta'))
 			return
 		self.onecmd("agents --selected")
 
@@ -239,8 +243,8 @@ Shows the list of Selected Agents
 					if not act_tuple['alive']:	# if Agent isn't active
 						continue				# Do not print its status
 				print ("[{alive}] {agent} ({last} secs ago)".format(
-					alive = "X" if act_tuple['alive'] else " ",
-					agent = agent,
+					alive = colored("X" if act_tuple['alive'] else " ",'green',attrs=['bold']),
+					agent = colored(agent, 'green'),
 					last = int(act_tuple['last'])
 					)
 				)
@@ -284,7 +288,10 @@ Example:
 				with open(exec_path, 'w+') as exfile:
 					exfile.write(line)
 					print ('''
-[>] Sending '{command}' to "{project}/{hostname}" ...'''.format(command = line, project = project, hostname = agent))
+[>] Sending '{command}' to "{project}/{hostname}" ...'''.format(command = colored(line,'cyan', attrs=['bold']),
+							project = colored(project, 'blue'),
+							hostname = colored(agent, 'green'))
+					)
 
 			except PermissionError as perror:
 				print ('''

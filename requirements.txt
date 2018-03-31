@@ -1,2 +1,2 @@
 watchdog
-colorama
+termcolor
