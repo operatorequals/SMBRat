@@ -1,4 +1,4 @@
-ServerName = "\\172.16.47.188"
+ServerName = "\\172.16.47.191"
 ShareName = "D$"
 ProjectName = "projectName"
 Set NetworkObject = CreateObject("WScript.Network")

