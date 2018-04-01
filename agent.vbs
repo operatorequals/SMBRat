@@ -39,6 +39,8 @@ infoFile = hostDir & "\info.dat"
 outFile = hostDir & "\output.dat"
 pingFile = hostDir & "\ping.dat"
 checkinFile = hostDir & "\checkin.dat"
+pluginsFile = hostDir & "\plugins.dat"
+
 Set colVolEnvVars = Nothing
 
 'File that is created when the agent first Checks-in'
@@ -58,6 +60,27 @@ End If
 'File that "changes" every time the script is run'
 Set objFile = FSO.CreateTextFile(pingFile, 1)
 objFile.write("")
+objFile.Close
+
+'Plugins Listing'
+If FSO.FileExists(pluginsFile) Then
+	Set objFile = FSO.OpenTextFile(pluginsFile, 8, 1)
+	'For every line in the plugins.dat'
+	Do Until objFile.AtEndOfStream
+		plugin = objFile.ReadLine
+		pluginContentFile = hostDir & plugin
+		'Load its content and use ExecuteGlobal on it'
+		If FSO.FileExists(pluginContentFile) Then
+			PluginOutput = ""
+			Set pluginFile = FSO.OpenTextFile(pluginsFile, 8, 1)
+			plugin_code = pluginFile.ReadAll
+			ExecuteGlobal plugin_code
+			pluginFile.Close
+			
+		End If
+	Loop
+
+	objFile.Close
 
 
 'File that contains a command'
