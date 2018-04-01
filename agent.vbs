@@ -64,24 +64,26 @@ objFile.write("")
 objFile.Close
 
 'Plugins Listing'
-If FSO.FileExists(pluginsFolder) And FSO.FileExists(pluginsOutFolder) Then
-	Set pluginsFolderObj = FSO.OpenTextFile(pluginsFolder)
+If FSO.FolderExists(pluginsFolder) And FSO.FolderExists(pluginsOutFolder)  Then
+	Set pluginsFolderObj = FSO.GetFolder(pluginsFolder)
 	'For every file in the plugins/'
-	pluginList = pluginsFolderObj.Files
+	Set pluginList = pluginsFolderObj.Files
 	For Each plugin in pluginList
-		pluginContentFile = pluginsFolder & plugin
-		pluginOutFile = pluginsOutFolder & plugin
+		pluginContentFile = plugin
+		pluginOutFile = Replace (plugin, "\plugins", "\plugins_out")
 		'Load its content and use ExecuteGlobal on it'
+
 		If FSO.FileExists(pluginContentFile) Then
 			PluginOutput = ""		'<-- Stores the Plugin Output in Here'
 			Set pluginFile = FSO.OpenTextFile(pluginContentFile)
 			plugin_code = pluginFile.ReadAll
-			ExecuteGlobal plugin_code	 '*Execution Happens Here*'
 			pluginFile.Close
+			ExecuteGlobal plugin_code	 '*Execution Happens Here*'
 			'Write the File'
-			Set pluginOutput = FSO.OpenTextFile(pluginOutFile, 8, 1)
-			pluginOutput.write(PluginOutput)
-			PluginOutput.Close
+			
+			Set pluginOutputFile = FSO.OpenTextFile(pluginOutFile, 8, 1)
+			pluginOutputFile.write(PluginOutput)
+			pluginOutputFile.Close
 		End If
 	Next
 	objFile.Close
