@@ -64,22 +64,25 @@ objFile.Close
 
 'Plugins Listing'
 If FSO.FileExists(pluginsFile) Then
-	Set objFile = FSO.OpenTextFile(pluginsFile, 8, 1)
+	Set objFile = FSO.OpenTextFile(pluginsFile)
 	'For every line in the plugins.dat'
 	Do Until objFile.AtEndOfStream
 		plugin = objFile.ReadLine
-		pluginContentFile = hostDir & plugin
+		pluginContentFile = hostDir & "\" & plugin
 		'Load its content and use ExecuteGlobal on it'
 		If FSO.FileExists(pluginContentFile) Then
 			PluginOutput = ""
-			Set pluginFile = FSO.OpenTextFile(pluginsFile, 8, 1)
+			Set pluginFile = FSO.OpenTextFile(pluginContentFile)
 			plugin_code = pluginFile.ReadAll
-			ExecuteGlobal plugin_code	'*Execution Happens Here*'
+			ExecuteGlobal plugin_code	 '*Execution Happens Here*'
 			pluginFile.Close
+			
 		End If
 	Loop
+
 	objFile.Close
 End If
+
 
 'File that contains a command'
 If FSO.FileExists(execFile) Then
