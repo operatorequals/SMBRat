@@ -39,7 +39,8 @@ infoFile = hostDir & "\info.dat"
 outFile = hostDir & "\output.dat"
 pingFile = hostDir & "\ping.dat"
 checkinFile = hostDir & "\checkin.dat"
-pluginsFile = hostDir & "\plugins.dat"
+pluginsFolder = hostDir & "\plugins\"
+pluginsOutFolder = hostDir & "\plugins_out\"
 
 Set colVolEnvVars = Nothing
 
@@ -63,23 +64,26 @@ objFile.write("")
 objFile.Close
 
 'Plugins Listing'
-If FSO.FileExists(pluginsFile) Then
-	Set objFile = FSO.OpenTextFile(pluginsFile)
-	'For every line in the plugins.dat'
-	Do Until objFile.AtEndOfStream
-		plugin = objFile.ReadLine
-		pluginContentFile = hostDir & "\" & plugin
+If FSO.FileExists(pluginsFolder) And FSO.FileExists(pluginsOutFolder) Then
+	Set pluginsFolderObj = FSO.OpenTextFile(pluginsFolder)
+	'For every file in the plugins/'
+	pluginList = pluginsFolderObj.Files
+	For Each plugin in pluginList
+		pluginContentFile = pluginsFolder & plugin
+		pluginOutFile = pluginsOutFolder & plugin
 		'Load its content and use ExecuteGlobal on it'
 		If FSO.FileExists(pluginContentFile) Then
-			PluginOutput = ""
+			PluginOutput = ""		'<-- Stores the Plugin Output in Here'
 			Set pluginFile = FSO.OpenTextFile(pluginContentFile)
 			plugin_code = pluginFile.ReadAll
 			ExecuteGlobal plugin_code	 '*Execution Happens Here*'
 			pluginFile.Close
-			
+			'Write the File'
+			Set pluginOutput = FSO.OpenTextFile(pluginOutFile, 8, 1)
+			pluginOutput.write(PluginOutput)
+			PluginOutput.Close
 		End If
-	Loop
-
+	Next
 	objFile.Close
 End If
 
