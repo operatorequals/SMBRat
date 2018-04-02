@@ -4,7 +4,7 @@ import os
 import pprint
 import time
 
-from watchdog.events import FileSystemEventHandler, DirCreatedEvent
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from termcolor import colored
