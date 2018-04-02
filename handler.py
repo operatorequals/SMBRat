@@ -252,6 +252,26 @@ Shows the list of Selected Agents
 		return
 
 
+	def do_sysinfo(self, line):
+		if not self.selected :
+			print (colored("No Agents selected!", 'magenta'))
+			return			
+		for agent in self.selected:
+			agent_info_path = get_path(agent, file = INFO_DAT)
+			project = find_project(agent)
+			with open(agent_info_path) as info_file:
+				info_str = info_file.read()
+			print ("""{project} / {agent}
+
+{info}
+{ruler}
+""".format(project = colored(project, 'blue'),
+	agent = colored(agent, 'green'),
+	info = colored(info_str, 'white', attrs = ['bold']),
+	ruler = colored("=" * 20, 'magenta',),
+	))
+
+
 	def do_execall(self, line):
 		"""
 > execall <cmd>
