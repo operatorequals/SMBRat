@@ -124,25 +124,25 @@ class SessionHandler(FileSystemEventHandler) :
 			output_dat = get_output_path(project, agent)
 			with open(output_dat, 'r') as output_file:
 				response = output_file.read()
-				print ('''
+			print ('''
 [<] Response from '{project}/{hostname}': 
 
 {response}
 ^^^^^^^^^^^^^^^^^^^^ {project}/{hostname} ^^^^^^^^^^^^^^^^^^^^
-					'''.format(project = colored(project,'blue'),
-						hostname = colored(agent,'green'),
-						response = colored(response,'white', attrs=['bold'])
-						)
-					) 
+				'''.format(project = colored(project,'blue'),
+					hostname = colored(agent,'green'),
+					response = colored(response,'white', attrs=['bold'])
+					)
+				) 
 			if not No_history:
 				history_dat = get_path(agent, project, HIST_DAT)
 				# os.touch( history_dat )
 				# os.system("touch {}".format(history_dat))	# Dirty for file creation
 				with open(history_dat, 'a') as history_file:
 					history_file.write('''
-{response}
+	{response}
 		=========== {timestamp} ===========
-'''.format(response = response,
+	'''.format(response = response,
 		timestamp = time.ctime())
 			)
 
