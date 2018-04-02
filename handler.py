@@ -237,7 +237,10 @@ Shows the list of Selected Agents
 
 		for project in  self.session_dict.keys():
 			active_agents = check_active(project, timeout = args.active if args.active else 20)
-			print ( "=== {}".format(project) )
+			print ( " /= {project}".format(
+					project = colored(project, 'blue')
+					)
+				)
 
 			for agent, act_tuple in active_agents.items():
 				if args.active != None:
@@ -268,8 +271,25 @@ Shows the list of Selected Agents
 			)
 		)
 
+	def do_checkin(self, line):
+		"""
+> checkin
+
+Shows the date and time of Checkin as declared by the Selected Agents
+		"""
+		if not self.selected :
+			print (colored("No Agents selected!", 'magenta'))
+			return			
+		for agent in self.selected:
+			self.show_agent_file(agent, CHECKIN_DAT)
+
 
 	def do_path(self, line):
+		"""
+> path
+
+Shows the UNC Path declared by the Selected Agents for their Writable Folders
+		"""
 		if not self.selected :
 			print (colored("No Agents selected!", 'magenta'))
 			return			
@@ -278,6 +298,11 @@ Shows the list of Selected Agents
 
 
 	def do_sysinfo(self, line):
+		"""
+> sysinfo
+
+Shows System Info declared by the Selected Agents
+		"""
 		if not self.selected :
 			print (colored("No Agents selected!", 'magenta'))
 			return			
