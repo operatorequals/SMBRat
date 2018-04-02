@@ -42,7 +42,9 @@ def find_project(agent):
 	for project in Sessions.keys():
 		if agent in Sessions[project].keys():
 			return project
-	raise Error('[!] Project Not Found for Agent "{}"'.format(colored(agent,'red')))
+	raise Exception(
+		'[!] Project Not Found for Agent "{}"'.format(colored(agent, 'red'))
+	)
 
 def initialize(share_folder) :
 	"""
