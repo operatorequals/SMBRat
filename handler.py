@@ -1,6 +1,7 @@
 import argparse
 import cmd
 import os
+import shutil
 import pprint
 import time
 
@@ -16,6 +17,7 @@ INFO_DAT = 'info.dat'
 CHECKIN_DAT = 'checkin.dat'
 PATH_DAT = 'path.dat'
 HIST_DAT = 'hist.dat'
+PLUGINS = 'plugins'
 Share = None
 No_history = False
 
@@ -39,6 +41,19 @@ def get_exec_path(project, agent):
 
 def get_output_path(project, agent):
     return get_path(agent, project, OUTPUT_DAT)
+
+
+def iterate_agents(session_dict):
+    for project in session_dict.keys():
+        for agent in session_dict[project]:
+            yield project, agent
+
+
+def get_plugins_from_path(path):
+    if os.path.exists(path):
+        for root, dirs, files in os.walk(path):
+            return set(files)
+    return set()
 
 
 def find_project(agent):
@@ -410,6 +425,66 @@ Type the command below to a new root shell and retry:
 
     def do_exit(self, line):
         return True
+
+    def do_plugins(self, line):
+        arg_parser = CLIArgumentParser()
+        arg_parser.add_argument(
+            '--add', '-a', help='Add a Plugin to the "selected" Agent',
+            nargs='+', default=[]
+        )
+        arg_parser.add_argument(
+            '--remove', '-r', help='Remove a Plugin from the "selected" Agent',
+            nargs='+', default=[]
+        )
+        arg_parser.add_argument(
+            '--list', '-l', help='List all available Plugins',
+            action='store_true'
+        )
+        args = arg_parser.parse_args(line.split())
+
+        if not self.selected:
+            print(colored("No Agents selected!", 'magenta'))
+            return
+
+        all_plugins = get_plugins_from_path(PLUGINS)
+        plugins_add = set(args.add) & all_plugins
+        plugins_remove = set(args.remove)
+
+        for project, agent in iterate_agents(self.session_dict):
+            if agent not in self.selected:
+                continue
+
+            plugin_path = get_path(agent, project, PLUGINS)
+            if not os.path.exists(plugin_path):
+                os.mkdir(plugin_path)
+
+            for plugin in plugins_remove:
+                installed_plugins = get_plugins_from_path(plugin_path)
+                if plugin not in installed_plugins:
+                    continue
+                os.remove(os.path.join(plugin_path, plugin))
+
+            for plugin in plugins_add:
+                shutil.copy(os.path.join('plugins', plugin), plugin_path)
+
+            _header = (
+                '{project} / {agent}\n\n'
+                'Plugins\n'
+                '-------\n'
+            )
+            installed_plugins = get_plugins_from_path(plugin_path)
+            plugin_text = '\n'.join([
+                colored(
+                    plugin,
+                    'green' if plugin in installed_plugins else 'white'
+                )
+                for plugin in all_plugins
+            ])
+            header = _header.format(
+                agent=colored(agent, 'green'),
+                project=colored(project, 'blue'),
+            )
+            print('{header}{text}'.format(header=header, text=plugin_text))
 
 
 if __name__ == '__main__':
