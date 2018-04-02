@@ -23,7 +23,7 @@ Next
 
 
 hostName = NetworkObject.ComputerName & "-" & NetworkObject.UserName & "-" & macAddress
-hostName = Replace(hostName, ":", "")
+hostName = Replace(hostName, ":", "-")
 hostDir = projectDir & "\" & hostName
 
 If NOT (FSO.FolderExists(hostDir)) Then
