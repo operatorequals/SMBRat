@@ -46,7 +46,7 @@ Set colVolEnvVars = Nothing
 'File that contains the UNC path for the Agent'
 If not FSO.FileExists(pathFile) Then
 	Set objFile = FSO.CreateTextFile(pathFile, 1)
-	objFile.write(hostDir)
+	objFile.write(hostDir & "\")
 	objFile.Close
 End If
 
