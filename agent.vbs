@@ -21,7 +21,9 @@ For Each Nad in Nads
    exit for
 Next
 
-hostName = NetworkObject.ComputerName & "-" & macAddress
+
+hostName = NetworkObject.ComputerName & "-" & NetworkObject.UserName & "-" & macAddress
+hostName = Replace(hostName, ":", "-")
 hostDir = projectDir & "\" & hostName
 
 If NOT (FSO.FolderExists(hostDir)) Then
