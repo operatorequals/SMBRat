@@ -14,6 +14,7 @@ OUTPUT_DAT = 'output.dat'
 PING_DAT = 'ping.dat'
 INFO_DAT = 'info.dat'
 CHECKIN_DAT = 'checkin.dat'
+PATH_DAT = 'path.dat'
 HIST_DAT = 'hist.dat'
 Share = None
 No_history = False
@@ -252,24 +253,36 @@ Shows the list of Selected Agents
 		return
 
 
+	def show_agent_file(self, agent, file_ = INFO_DAT):
+		agent_file_path = get_path(agent, file = file_)
+		project = find_project(agent)
+		with open(agent_file_path) as file_obj:
+			content_str = file_obj.read()
+		print ("""{project} / {agent}
+{info}
+{ruler}
+""".format(project = colored(project, 'blue'),
+			agent = colored(agent, 'green'),
+			info = colored(content_str, 'white', attrs = ['bold']),
+			ruler = colored("=" * 20, 'magenta',),
+			)
+		)
+
+
+	def do_path(self, line):
+		if not self.selected :
+			print (colored("No Agents selected!", 'magenta'))
+			return			
+		for agent in self.selected:
+			self.show_agent_file(agent, PATH_DAT)
+
+
 	def do_sysinfo(self, line):
 		if not self.selected :
 			print (colored("No Agents selected!", 'magenta'))
 			return			
 		for agent in self.selected:
-			agent_info_path = get_path(agent, file = INFO_DAT)
-			project = find_project(agent)
-			with open(agent_info_path) as info_file:
-				info_str = info_file.read()
-			print ("""{project} / {agent}
-
-{info}
-{ruler}
-""".format(project = colored(project, 'blue'),
-	agent = colored(agent, 'green'),
-	info = colored(info_str, 'white', attrs = ['bold']),
-	ruler = colored("=" * 20, 'magenta',),
-	))
+			self.show_agent_file(agent, INFO_DAT)
 
 
 	def do_execall(self, line):
