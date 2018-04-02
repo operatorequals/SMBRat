@@ -66,6 +66,14 @@ Impacket v0.9.17-dev - Copyright 2002-2018 Core Security Technologies
 ### Infect a Host from a file
 A *While loop* can be added to the `agent.vbs` file's beginning, with a delay statement of multiple seconds (10 secs is ideal), and it will be able to infect windows hosts by *double clicking* / *phishing* / *excel macros* / etc...
 
+A `while True` loop in *VBS* with delay of 1 second looks like this:
+```vb
+Do While True
+	[...]
+	WScript.Sleep 1000
+Loop
+```
+
 ### Infect a Host *fileless*
 Yet, if a Windows host has *RPC* enabled, it is possible to install the *VBS* file as *fileless malware* through `WMI` and the fabulous `impacket` package examples with a command like:
 ```bash
