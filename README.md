@@ -35,6 +35,9 @@ It's Routine is (more-or-less) as follows:
 * The command's response is stored in `output.dat` (next to `exec.dat`). 
 * Deletes the `exec.dat` file.
 
+##### [Wiki Page for Setting the *Agent*](https://github.com/operatorequals/SMBRat/wiki/Agent)
+
+
 
 ### Handler
 
@@ -89,22 +92,8 @@ It can be really handy to give it a spin before "deploying" :wink:
 * [Online Tool for VBS Obfuscation](https://isvbscriptdead.com/vbs-obfuscator/)
 * [Github Repo](https://github.com/DoctorLai/VBScript_Obfuscator)
 
-## Directory Structure in the *SMB Share*
+## [Directory Structure in the *SMB Share*](https://github.com/operatorequals/SMBRat/wiki/Directory-Structure)
 
-The Directory shared through SMB (named `Share` in this example) will grow using the below structure:
-```
-	Share/
-	|
-	\--Project1/
-	|	|
-	|	\--<Hostname1>-<MAC_ADDRESS1>/
-	|	\--<Hostname2>-<MAC_ADDRESS2>/
-	|
-	\--Project2/
-		|
-		\--<Hostname3>-<MAC_ADDRESS3>/
-	[...]
-```
 
 #### Never create folders manually in the Shared Folder
 
