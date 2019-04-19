@@ -62,6 +62,38 @@ Impacket v0.9.17-dev - Copyright 2002-2018 Core Security Technologies
 [*] Config file parsed
 
 ```
+#### The *WebDAV* case!
+As the `agent` is configured to only use UNC paths, WebDAV can also be used with **zero-changes**.
+Instead of an SMB server, a *WebDAV server* can be used (a great WebDAV server with SSL support is [wsgidav](https://github.com/mar10/wsgidav/)).
+
+```bash
+# mkdir 'D$'
+# wsgidav -p 80 -H 0.0.0.0 -r . --auth anonymous
+[...] INFO    :  WsgiDAV/3.0.0 Python/2.7.16 Linux-4.19.0-kali3-amd64-x86_64-with-Kali-kali-rolling-kali-rolling
+[...] INFO    :  Lock manager:      LockManager(LockStorageDict)
+[...] INFO    :  Property manager:  None
+[...] INFO    :  Domain controller: SimpleDomainController()
+[...] INFO    :  Registered DAV providers by route:
+[...] INFO    :    - '/:dir_browser': FilesystemProvider for path '/root/.virtualenvs/wsgidav/local/lib/python2.7/site-packages/wsgidav/dir_browser/htdocs' (Read-Only) (anonymous)
+[...] INFO    :    - '/': FilesystemProvider for path '/tmp/DAV' (Read-Write) (anonymous)
+[...] WARNING :  Basic authentication is enabled: It is highly recommended to enable SSL.
+[...] WARNING :  Share '/:dir_browser' will allow anonymous read access.
+[...] WARNING :  Share '/' will allow anonymous write access.
+[...] INFO    :  Running WsgiDAV/3.0.0 Cheroot/6.5.4 Python/2.7.16
+[...] INFO    :  Serving on http://0.0.0.0:80 ...
+
+[...] INFO    :  192.168.163.130 - (anonymous) - [2019-04-18 14:57:53] "PROPFIND /D$/Project1/DESKTOP-I3NFOQ5-John-AA-BB-CC-DD-EE-FF/ping.dat" length=0, depth=0, elap=0.004sec -> 207 Multi-Status
+```
+For the SSL support, the UNC paths have to change slightly, from:
+```
+\\<Server-IP>\DIR\
+```
+to:
+```
+\\<Server-IP>@SSL@443\DIR\
+```
+This change can only be done to `ServerName` `agent.vbs` variable, as all paths are constructed by this.
+Keep in mind that the SSL certificates have to be **trusted by the system running the `agent`**. Self-signed Certificates **will fail** with warnings.
 
 
 ## Infection Scheme
